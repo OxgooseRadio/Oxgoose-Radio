@@ -341,7 +341,7 @@
     const data = await r.json();
     return data
       .filter(x => x.type === "file" && /\.mp3$/i.test(x.name))
-      .map(x => ({ name: x.name, url: x.download_url }))
+      .map(x => ({ name: x.name, url: encodeURI(x.name) }))
       .sort((a,b) => a.name.localeCompare(b.name));
   }
 
