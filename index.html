@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OXGOOSE RADIO</title>
+  <style>
+    :root { color-scheme: dark; }
+    body{
+      margin:0;
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(circle at top, #1a0f2e, #05030a 70%);
+      color:#fff;
+      padding:24px;
+    }
+    .card{
+      width:min(560px, 100%);
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:22px;
+      padding:22px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 0 50px rgba(255,0,200,.16);
+    }
+    .title{
+      font-weight:900;
+      font-size:28px;
+      letter-spacing:2px;
+      text-align:center;
+      margin:0 0 6px;
+      background:linear-gradient(90deg,#ff4fd8,#3aa0ff);
+      -webkit-background-clip:text;
+      background-clip:text;
+      color:transparent;
+    }
+    .sub{
+      text-align:center;
+      opacity:.75;
+      margin:0 0 16px;
+      font-size:13px;
+    }
+    .status{
+      text-align:center;
+      margin:10px 0 14px;
+      min-height:22px;
+      font-size:14px;
+      opacity:.92;
+    }
+    .row{
+      display:flex;
+      gap:10px;
+      justify-content:center;
+      flex-wrap:wrap;
+    }
+    button{
+      border:0;
+      cursor:pointer;
+      font-weight:700;
+      border-radius:999px;
+      padding:10px 14px;
+      color:#000;
+      background:linear-gradient(90deg,#ff4fd8,#3aa0ff);
+      transition: transform .12s ease;
+    }
+    button:hover{ transform: scale(1.06); }
+    button.secondary{
+      color:#fff;
+      background:rgba(255,255,255,.12);
+      border:1px solid rgba(255,255,255,.16);
+    }
+    .bar{
+      height:9px;
+      border-radius:999px;
+      background:rgba(255,255,255,.14);
+      overflow:hidden;
+      margin:16px 0 8px;
+    }
+    .fill{
+      height:100%;
+      width:0%;
+      background:linear-gradient(90deg,#ff4fd8,#3aa0ff);
+    }
+    .meta{
+      display:flex;
+      justify-content:space-between;
+      font-size:12px;
+      opacity:.75;
+      margin-bottom:14px;
+      gap:12px;
+    }
+    .list{
+      max-height:260px;
+      overflow:auto;
+      border-top:1px solid rgba(255,255,255,.12);
+      padding-top:10px;
+      margin-top:10px;
+    }
+    .track{
+      padding:8px 10px;
+      border-radius:12px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      cursor:pointer;
+    }
+    .track:hover{ background:rgba(255,255,255,.06); }
+    .track.active{ background:rgba(255,255,255,.10); outline:1px solid rgba(255,255,255,.14); }
+    .idx{
+      width:28px;
+      text-align:right;
+      opacity:.65;
+      font-variant-numeric: tabular-nums;
+    }
+    .name{
+      flex:1;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .pill{
+      font-size:11px;
+      opacity:.8;
+      padding:3px 8px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.06);
+    }
+    a { color: #7fc4ff; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1 class="title">OXGOOSE RADIO</h1>
+    <p class="sub">Auto-playlist from this GitHub repo</p>
+
+    <div class="status" id="status">Loading tracks…</div>
+
+    <div class="row">
+      <button id="play">Play</button>
+      <button id="pause" class="secondary">Pause</button>
+      <button id="next">Next</button>
+      <button id="shuffle" class="secondary">Shuffle: Off</button>
+    </div>
+
+    <div class="bar"><div class="fill" id="fill"></div></div>
+    <div class="meta">
+      <div id="time">0:00 / 0:00</div>
+      <div class="pill" id="count">0 tracks</div>
+    </div>
+
+    <div class="list" id="list"></div>
+
+    <audio id="audio" preload="metadata"></audio>
+
+    <p class="sub" style="margin-top:14px;">
+      If you add more MP3s later, they appear automatically.
+    </p>
+  </div>
+
+<script>
+(() => {
+  // 👇 If you ever rename the repo/user, change these two:
+  const OWNER = "OxgooseRadio";
+  const REPO  = "Oxgoose-Radio";
+
+  const statusEl = document.getElementById("status");
+  const listEl = document.getElementById("list");
+  const fillEl = document.getElementById("fill");
+  const timeEl = document.getElementById("time");
+  const countEl = document.getElementById("count");
+  const audio = document.getElementById("audio");
+  const shuffleBtn = document.getElementById("shuffle");
+
+  let tracks = [];
+  let current = 0;
+  let shuffleOn = false;
+
+  function prettyName(filename) {
+    // strip .mp3, keep the rest
+    return filename.replace(/\.mp3$/i, "");
+  }
+
+  function fmtTime(sec) {
+    if (!isFinite(sec)) return "0:00";
+    sec = Math.floor(sec);
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${m}:${String(s).padStart(2,"0")}`;
+  }
+
+  function setStatus(text) {
+    statusEl.textContent = text;
+  }
+
+  function renderList() {
+    listEl.innerHTML = "";
+    tracks.forEach((t, i) => {
+      const row = document.createElement("div");
+      row.className = "track" + (i === current ? " active" : "");
+      row.title = t.name;
+
+      const idx = document.createElement("div");
+      idx.className = "idx";
+      idx.textContent = String(i + 1);
+
+      const name = document.createElement("div");
+      name.className = "name";
+      name.textContent = prettyName(t.name);
+
+      row.appendChild(idx);
+      row.appendChild(name);
+
+      row.onclick = () => {
+        load(i);
+        play();
+      };
+
+      listEl.appendChild(row);
+    });
+
+    countEl.textContent = `${tracks.length} tracks`;
+  }
+
+  function load(i) {
+    current = (i + tracks.length) % tracks.length;
+    audio.src = tracks[current].url;
+    setStatus(`Queued: ${prettyName(tracks[current].name)}`);
+    renderList();
+  }
+
+  function play() {
+    if (!tracks.length) return;
+    if (!audio.src) load(current);
+
+    audio.play().then(() => {
+      setStatus(`Now Playing: ${prettyName(tracks[current].name)}`);
+    }).catch(() => {
+      setStatus("Click Play again (browser blocked autoplay).");
+    });
+  }
+
+  function pause() {
+    audio.pause();
+    if (tracks.length) setStatus(`Paused: ${prettyName(tracks[current].name)}`);
+  }
+
+  function next() {
+    if (!tracks.length) return;
+    if (shuffleOn) {
+      const n = Math.floor(Math.random() * tracks.length);
+      load(n);
+    } else {
+      load(current + 1);
+    }
+    play();
+  }
+
+  document.getElementById("play").onclick = play;
+  document.getElementById("pause").onclick = pause;
+  document.getElementById("next").onclick = next;
+
+  shuffleBtn.onclick = () => {
+    shuffleOn = !shuffleOn;
+    shuffleBtn.textContent = `Shuffle: ${shuffleOn ? "On" : "Off"}`;
+  };
+
+  audio.addEventListener("ended", next);
+
+  audio.addEventListener("timeupdate", () => {
+    const d = audio.duration || 0;
+    const c = audio.currentTime || 0;
+    const pct = d ? (c / d) * 100 : 0;
+    fillEl.style.width = pct + "%";
+    timeEl.textContent = `${fmtTime(c)} / ${fmtTime(d)}`;
+  });
+
+  async function fetchTracks() {
+    // Uses GitHub Contents API for the repo root
+    const api = `https://api.github.com/repos/${OWNER}/${REPO}/contents/`;
+    const r = await fetch(api, { headers: { "Accept": "application/vnd.github+json" } });
+    if (!r.ok) throw new Error(`GitHub API error: ${r.status}`);
+    const data = await r.json();
+
+    // Filter MP3 files and use download_url (raw) so playback works reliably
+    const mp3s = data
+      .filter(x => x.type === "file" && /\.mp3$/i.test(x.name))
+      .map(x => ({ name: x.name, url: x.download_url }))
+      .sort((a,b) => a.name.localeCompare(b.name));
+
+    return mp3s;
+  }
+
+  (async () => {
+    try {
+      tracks = await fetchTracks();
+      if (!tracks.length) {
+        setStatus("No MP3 files found in the repo root.");
+        return;
+      }
+      load(0);
+      setStatus(`Ready: ${tracks.length} tracks loaded.`);
+    } catch (e) {
+      console.error(e);
+      setStatus("Failed to load tracks. (GitHub API rate limit or network issue)");
+    }
+  })();
+})();
+</script>
+</body>
+</html>
