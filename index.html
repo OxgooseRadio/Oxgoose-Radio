@@ -281,12 +281,13 @@
 
   // --- Hotspot configuration stored in localStorage
   // Positions are percent of stage: x,y,w,h
-  const DEFAULT_HOTSPOTS = [
-    { id:"play",    label:"PLAY",    x: 40, y: 66, w: 14, h: 7 },
-    { id:"pause",   label:"PAUSE",   x: 56, y: 66, w: 14, h: 7 },
-    { id:"next",    label:"NEXT",    x: 40, y: 75, w: 14, h: 7 },
-    { id:"shuffle", label:"SHUFFLE", x: 56, y: 75, w: 18, h: 7 },
-  ];
+const defaultHotspots = [
+  { id:"play",    label:"PLAY",    x:24.666666666666664, y:44.96296296296296,  w:11.444444444444445, h:4.555555555555555 },
+  { id:"pause",   label:"PAUSE",   x:37.88888888888889,  y:45.851851851851855, w:11.555555555555555, h:4.111111111111111 },
+  { id:"next",    label:"NEXT",    x:52.37037037037037,  y:45.307307307307306, w:10.88888888888889,  h:4.185185185185185 },
+  { id:"shuffle", label:"SHUFFLE", x:64.44444444444444,  y:44.851851851851855, w:11.666666666666666, h:3.6666666666666665 }
+];
+
 
   const LS_KEY = "oxgoose_hotspots_v1";
   function loadHotspots(){
