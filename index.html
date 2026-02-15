@@ -354,22 +354,6 @@
     <div id="signText"><span id="signInner"></span></div>
     <div id="viz" aria-hidden="true"></div>
     <div id="vignette"></div>
-
-    <div id="hint">
-      <b>Tip:</b> Click <b>⚙️ Setup</b> → <b>Hotspot Edit</b> to drag the PLAY/PAUSE/NEXT/SHUFFLE boxes onto the exact buttons in the art.
-      The positions save automatically in your browser.
-    </div>
-
-    <div id="panel">
-      <h3>Setup</h3>
-      <p>
-        This page auto-builds the playlist by reading <b>.mp3</b> files from your GitHub repo.
-        Hotspots are draggable in edit mode, saved to this browser.
-      </p>
-      <div class="row">
-        <button class="btn" id="btnEdit">Hotspot Edit: Off</button>
-        <button class="btn" id="btnReset">Reset Hotspots</button>
-      </div>
       <div class="row">
         <button class="btn" id="btnRescan">Rescan MP3s</button>
         <button class="btn" id="btnClose">Close</button>
@@ -378,14 +362,8 @@
         If you changed filenames a lot, hit <b>Rescan MP3s</b>. If it ever “sticks” on Loading, hard refresh (Ctrl+Shift+R).
       </p>
     </div>
-
-    <div id="statusBar">
-      <div id="statusLeft">
-        <div id="pill"><span id="dot"></span> OXGOOSE RADIO</div>
-        <div id="now">Loading track list…</div>
       </div>
       <div id="rightButtons">
-        <div id="time">0:00 / 0:00</div>
         <button class="btn" id="btnShuffle">Shuffle: On</button>
         <button class="btn" id="btnSetup">⚙️ Setup</button>
       </div>
@@ -418,8 +396,8 @@
   const overlay= document.getElementById("overlay");
   const bg     = document.getElementById("bg");
   const audio  = document.getElementById("audio");
-  const nowEl  = document.getElementById("now");
-  const timeEl = document.getElementById("time");
+  const nowEl = document.getElementById("signInner") || document.getElementById("signText");
+  const timeEl = document.getElementById("time"); // may be null if status bar removed // may be null if status bar removed
   const vizEl  = document.getElementById("viz");
 
   const panel  = document.getElementById("panel");
@@ -478,10 +456,34 @@
   let shufflePos = 0;
 
   function setNow(text){
-  nowEl.textContent = text;
+  // Write to the big sign (and optionally to the bottom bar if present)
+  if (nowEl) nowEl.textContent = text;
 
   const sign = document.getElementById("signText");
-  if (sign) sign.textContent = text;
+  const inner = document.getElementById("signInner");
+  if (!sign || !inner) return;
+
+  inner.textContent = text;
+
+  // Apply marquee only when needed
+  requestAnimationFrame(() => {
+    const pad = 0;
+    const boxW = sign.clientWidth - pad;
+    const textW = inner.scrollWidth;
+
+    if (textW > boxW + 2){
+      const overflow = textW - boxW;
+      // Speed: ~55 px/sec (tweak if you want faster/slower)
+      const dur = Math.max(8, Math.min(40, textW / 55));
+      sign.classList.add("scroll");
+      sign.style.setProperty("--marqueeShift", `-${overflow}px`);
+      sign.style.setProperty("--marqueeDur", `${dur}s`);
+    } else {
+      sign.classList.remove("scroll");
+      sign.style.removeProperty("--marqueeShift");
+      sign.style.removeProperty("--marqueeDur");
+    }
+  });
 }
 
   function fmtTime(sec){
@@ -495,8 +497,8 @@
   function setTime(){
     const cur = audio.currentTime || 0;
     const dur = audio.duration || 0;
-    timeEl.textContent = `${fmtTime(cur)} / ${fmtTime(dur)}`;
-  }
+    if (timeEl) timeEl.textContent = `${fmtTime(cur)} / ${fmtTime(dur)}`;
+}
 
   // =========================
   // GitHub API fetch
@@ -774,7 +776,7 @@
       case "next":   return nextTrack();
       case "shuffle":
         shuffleOn = !shuffleOn;
-        btnShuffle.textContent = `Shuffle: ${shuffleOn ? "On" : "Off"}`;
+        if (btnShuffle) btnShuffle.textContent = `Shuffle: ${shuffleOn ? "On" : "Off"}`;
         if (shuffleOn){
           buildShuffle();
         }
@@ -788,20 +790,20 @@
   // =========================
   // Panel controls
   // =========================
-  btnSetup.addEventListener("click", () => panel.classList.toggle("open"));
+  if (btnSetup) btnSetup.addEventListener("click", () => panel.classList.toggle("open"));
   btnClose.addEventListener("click", () => panel.classList.remove("open"));
 
-  btnEdit.addEventListener("click", () => {
+  if (btnEdit) btnEdit.addEventListener("click", () => {
     setEditMode(!editMode);
   });
 
-  btnReset.addEventListener("click", () => resetHotspots());
+  if (btnReset) btnReset.addEventListener("click", () => resetHotspots());
 
   btnRescan.addEventListener("click", async () => {
     await boot(true);
   });
 
-  btnShuffle.addEventListener("click", () => handleAction("shuffle"));
+  if (btnShuffle) btnShuffle.addEventListener("click", () => handleAction("shuffle"));
 
   // =========================
   // Audio events
