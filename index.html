@@ -286,27 +286,26 @@
       #statusBar{ flex-direction:column; align-items:flex-start; gap:8px; }
       #rightButtons{ width:100%; justify-content:flex-end; }
     }
-    #signText {
+  #signText {
   position: absolute;
 
-  /* These numbers position it over the sign area */
   left: 50%;
-  bottom: 6.5%;
-  transform: translateX(-50%);
+  top: 72%;   /* anchor from top instead */
 
-  width: 65%;
+  transform: translate(-50%, -50%);
+  width: 60%;
   text-align: center;
 
   font-family: Impact, Arial Black, sans-serif;
-  font-size: clamp(22px, 3.2vw, 42px);
+  font-size: clamp(22px, 3vw, 38px);
   letter-spacing: 2px;
 
   color: #39ff14;
 
   text-shadow:
     0 0 6px #39ff14,
-    0 0 12px #39ff14,
-    0 0 22px #1aff00;
+    0 0 14px #39ff14,
+    0 0 28px #00ff88;
 
   pointer-events: none;
   user-select: none;
