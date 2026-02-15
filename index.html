@@ -286,30 +286,47 @@
       #statusBar{ flex-direction:column; align-items:flex-start; gap:8px; }
       #rightButtons{ width:100%; justify-content:flex-end; }
     }
-  #signText {
-  position: absolute;
+  #signText{
+  position:absolute;
+  left:50%;
+  top:72%;
+  transform:translate(-50%,-50%);
+  width:62%;
+  padding:10px 14px;
 
-  left: 50%;
-  top: 72%;   /* anchor from top instead */
+  /* keep text inside the sign */
+  display:-webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;     /* max 2 lines */
+  overflow:hidden;
 
-  transform: translate(-50%, -50%);
-  width: 60%;
-  text-align: center;
+  text-align:center;
+  line-height:1.05;
+  letter-spacing:1px;
 
+  /* readability */
   font-family: Impact, Arial Black, sans-serif;
-  font-size: clamp(22px, 3vw, 38px);
-  letter-spacing: 2px;
+  font-size:clamp(18px, 2.2vw, 34px);
+  color:#58ff3b;
 
-  color: #39ff14;
+  /* dark glass plate behind text (still looks “in-universe”) */
+  background: rgba(0,0,0,.35);
+  border: 1px solid rgba(120,255,120,.18);
+  border-radius: 10px;
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
 
+  /* punchy outline + glow */
+  -webkit-text-stroke: 1px rgba(0,0,0,.75);
   text-shadow:
-    0 0 6px #39ff14,
-    0 0 14px #39ff14,
-    0 0 28px #00ff88;
+    0 2px 0 rgba(0,0,0,.55),
+    0 0 6px rgba(60,255,60,.55),
+    0 0 16px rgba(60,255,60,.35);
 
-  pointer-events: none;
-  user-select: none;
+  pointer-events:none;
+  user-select:none;
 }
+
 
   </style>
 </head>
