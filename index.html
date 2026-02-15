@@ -419,6 +419,8 @@
   const bg     = document.getElementById("bg");
   const audio  = document.getElementById("audio");
   const nowEl  = document.getElementById("now");
+  const signTextEl = document.getElementById("signText");
+  const signInnerEl = document.getElementById("signInner");
   const timeEl = document.getElementById("time");
   const vizEl  = document.getElementById("viz");
 
@@ -479,9 +481,36 @@
 
   function setNow(text){
   nowEl.textContent = text;
+}
 
-  const sign = document.getElementById("signText");
-  if (sign) sign.textContent = text;
+
+function setSignTitle(text){
+  if (!signTextEl || !signInnerEl) return;
+
+  // Set the text into the inner span (so CSS marquee can move it)
+  signInnerEl.textContent = text ?? "";
+
+  // Reset scroll state
+  signTextEl.classList.remove("scroll");
+  signTextEl.style.removeProperty("--marqueeShift");
+  signTextEl.style.removeProperty("--marqueeDur");
+
+  // Measure after layout updates
+  requestAnimationFrame(() => {
+    const boxW = signTextEl.clientWidth;
+    const textW = signInnerEl.scrollWidth;
+
+    if (textW > boxW) {
+      const shift = (textW - boxW) + 40; // include the padding-right gap
+      signTextEl.style.setProperty("--marqueeShift", `${shift}px`);
+
+      // Duration scales with distance (tweak divisor to change speed)
+      const dur = Math.max(8, shift / 45);
+      signTextEl.style.setProperty("--marqueeDur", `${dur}s`);
+
+      signTextEl.classList.add("scroll");
+    }
+  });
 }
 
   function fmtTime(sec){
@@ -579,7 +608,7 @@
     try{
       await audio.play();
       setNow(`Now Playing: ${cleanName(tracks[currentIndex()].name)}`);
-      setSignTitle(cleanName(tracks[currentIndex].name));
+      setSignTitle(cleanName(tracks[currentIndex()].name));
       vizEl.classList.add("on");
       setPulse(true);
     }catch(e){
@@ -591,7 +620,7 @@
   function pauseAudio(){
     audio.pause();
     setNow(`Paused: ${cleanName(tracks[currentIndex()].name)}`);
-    setSignTitle(cleanName(tracks[currentIndex].name));
+    setSignTitle(cleanName(tracks[currentIndex()].name));
     vizEl.classList.remove("on");
     setPulse(false);
   }
