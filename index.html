@@ -447,7 +447,12 @@
   let shuffled = [];
   let shufflePos = 0;
 
-  function setNow(text){ nowEl.textContent = text; }
+  function setNow(text){
+  nowEl.textContent = text;
+
+  const sign = document.getElementById("signText");
+  if (sign) sign.textContent = text;
+}
 
   function fmtTime(sec){
     if (!isFinite(sec) || sec < 0) sec = 0;
