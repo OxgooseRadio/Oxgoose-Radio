@@ -314,8 +314,12 @@
     shufflePos = 0;
   }
 
-  function nextTrack(){
+  function nextTrack(opts = {}){
     if (!tracks.length) return;
+
+    // Capture whether we should continue playing *before* we swap the src.
+    const shouldPlay = !!opts.forcePlay || !audio.paused;
+
     if (shuffleOn){
       if (!shuffled.length) buildShuffle();
       shufflePos++;
@@ -326,11 +330,12 @@
     }else{
       setTrackIndex(currentIndex + 1);
     }
-    // keep playing if already playing
-    if (!audio.paused) audio.play().catch(()=>{});
-  }
 
-  function toggleShuffle(){
+    // If we were already playing (or we're advancing from 'ended'), auto-play the new track.
+    if (shouldPlay){
+      audio.play().catch(()=>{});
+    }
+  }function toggleShuffle(){
     shuffleOn = !shuffleOn;
     if (shuffleOn){
       buildShuffle();
@@ -375,7 +380,7 @@
     });
 
     // Auto-advance
-    audio.addEventListener("ended", () => nextTrack());
+    audio.addEventListener("ended", () => nextTrack({ forcePlay:true }));
 
     // Load playlist
     try{
