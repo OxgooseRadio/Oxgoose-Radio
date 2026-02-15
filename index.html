@@ -75,29 +75,6 @@
     }
 
     /* Status bar bottom */
-    #statusBar{
-      position:absolute;
-      left:14px; right:14px; bottom:12px;
-      padding:10px 12px;
-      border-radius: 14px;
-      background: rgba(0,0,0,.35);
-      border:1px solid rgba(255,255,255,.10);
-      display:flex;
-      gap:10px;
-      align-items:center;
-      justify-content:space-between;
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      pointer-events:auto;
-    }
-
-    #statusLeft{
-      min-width:0;
-      display:flex;
-      gap:10px;
-      align-items:center;
-    }
-
     #pill{
       display:inline-flex;
       align-items:center;
@@ -219,27 +196,7 @@
     .btn:hover{ background: rgba(255,255,255,.10); }
     .btn:active{ transform: scale(.98); }
 
-    #rightButtons{
-      display:flex;
-      gap:8px;
-      align-items:center;
-    }
-
     /* Config panel */
-    #panel{
-      position:absolute;
-      top:14px; right:14px;
-      width:min(86%, 360px);
-      background: var(--panel);
-      border:1px solid var(--stroke);
-      border-radius: 18px;
-      padding:12px;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      box-shadow: 0 20px 60px rgba(0,0,0,.55);
-      pointer-events:auto;
-      display:none;
-    }
     #panel.open{ display:block; }
 
     #panel h3{
@@ -264,28 +221,11 @@
     #panel .row .btn{ flex: 1 1 auto; }
 
     /* Help toast */
-    #hint{
-      position:absolute;
-      left:14px; top:14px;
-      background: var(--panel2);
-      border:1px solid rgba(255,255,255,.10);
-      border-radius: 14px;
-      padding:10px 12px;
-      font-size:12px;
-      color:rgba(255,255,255,.80);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      pointer-events:none;
-      max-width: 62%;
-    }
     #hint b{ color:rgba(255,255,255,.92); }
 
     /* Mobile safety */
     @media (max-width: 560px){
-      #hint{ max-width: 82%; font-size:11px; }
-      #statusBar{ flex-direction:column; align-items:flex-start; gap:8px; }
-      #rightButtons{ width:100%; justify-content:flex-end; }
-    }
+      }
   #signText{
   position:absolute;
   left:50%;
@@ -340,8 +280,6 @@
   100% { transform: translateX(calc(-1 * var(--marqueeShift, 0px))); }
 }
 
-
-
   </style>
 </head>
 <body>
@@ -354,40 +292,17 @@
     <div id="signText"><span id="signInner"></span></div>
     <div id="viz" aria-hidden="true"></div>
     <div id="vignette"></div>
-
-    <div id="hint">
-      <b>Tip:</b> Click <b>⚙️ Setup</b> → <b>Hotspot Edit</b> to drag the PLAY/PAUSE/NEXT/SHUFFLE boxes onto the exact buttons in the art.
-      The positions save automatically in your browser.
-    </div>
-
-    <div id="panel">
-      <h3>Setup</h3>
-      <p>
-        This page auto-builds the playlist by reading <b>.mp3</b> files from your GitHub repo.
-        Hotspots are draggable in edit mode, saved to this browser.
-      </p>
-      <div class="row">
-        <button class="btn" id="btnEdit">Hotspot Edit: Off</button>
-        <button class="btn" id="btnReset">Reset Hotspots</button>
-      </div>
-      <div class="row">
+<div class="row">
         <button class="btn" id="btnRescan">Rescan MP3s</button>
-        <button class="btn" id="btnClose">Close</button>
       </div>
       <p style="margin-top:10px; opacity:.75">
         If you changed filenames a lot, hit <b>Rescan MP3s</b>. If it ever “sticks” on Loading, hard refresh (Ctrl+Shift+R).
       </p>
     </div>
-
-    <div id="statusBar">
-      <div id="statusLeft">
-        <div id="pill"><span id="dot"></span> OXGOOSE RADIO</div>
-        <div id="now">Loading track list…</div>
+<div id="now">Loading track list…</div>
       </div>
       <div id="rightButtons">
         <div id="time">0:00 / 0:00</div>
-        <button class="btn" id="btnShuffle">Shuffle: On</button>
-        <button class="btn" id="btnSetup">⚙️ Setup</button>
       </div>
     </div>
 
@@ -414,63 +329,20 @@
   // =========================
   // DOM
   // =========================
-  const stage  = document.getElementById("stage");
-  const overlay= document.getElementById("overlay");
-  const bg     = document.getElementById("bg");
-  const audio  = document.getElementById("audio");
-  const nowEl  = document.getElementById("now");
-  const signTextEl = document.getElementById("signText");
+  const stage = document.getElementById("stage");
+  const overlay = document.getElementById("overlay");
+  const bg = document.getElementById("bg");
+  const vizEl = document.getElementById("viz");
+  const timeEl = document.getElementById("time"); // may be null if status bar removed
+  const nowEl  = document.getElementById("now");  // may be null if status bar removed
+
+  // The "sign" text over Scarlett's blank display
+  const signTextEl  = document.getElementById("signText");
   const signInnerEl = document.getElementById("signInner");
-  const timeEl = document.getElementById("time");
-  const vizEl  = document.getElementById("viz");
 
-  const panel  = document.getElementById("panel");
-  const btnSetup = document.getElementById("btnSetup");
-  const btnClose = document.getElementById("btnClose");
-  const btnEdit  = document.getElementById("btnEdit");
-  const btnReset = document.getElementById("btnReset");
-  const btnRescan= document.getElementById("btnRescan");
-  const btnShuffle = document.getElementById("btnShuffle");
-
-  // =========================
-  // Hotspots (percent of stage)
-  // =========================
-  const LS_KEY = "oxgoose_hotspots_v3";
-  const DEFAULT_HOTSPOTS = [
-    // These are "reasonable defaults" but you will likely adjust them using Hotspot Edit.
-    // x,y,w,h are % of stage width/height
-    { id:"play",    label:"PLAY",    x:24.5, y:44.8, w:11.5, h:4.9, cls:"hs-play" },
-    { id:"pause",   label:"PAUSE",   x:37.7, y:44.8, w:11.8, h:4.9, cls:"hs-pause" },
-    { id:"next",    label:"NEXT",    x:50.9, y:44.8, w:11.5, h:4.9, cls:"hs-next" },
-    { id:"shuffle", label:"SHUFFLE", x:64.1, y:44.8, w:12.2, h:4.9, cls:"hs-shuffle" },
-  ];
-
-  function loadHotspots() {
-    try{
-      const raw = localStorage.getItem(LS_KEY);
-      if (!raw) return structuredClone(DEFAULT_HOTSPOTS);
-      const parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed) || !parsed.length) return structuredClone(DEFAULT_HOTSPOTS);
-      // normalize missing fields
-      return parsed.map(h => ({
-        id: h.id, label: h.label ?? h.id?.toUpperCase(),
-        x:+h.x, y:+h.y, w:+h.w, h:+h.h,
-        cls: h.cls || ("hs-" + h.id)
-      })).filter(h => h.id && isFinite(h.x) && isFinite(h.y) && isFinite(h.w) && isFinite(h.h));
-    }catch(e){
-      return structuredClone(DEFAULT_HOTSPOTS);
-    }
-  }
-
-  function saveHotspots(hs){
-    localStorage.setItem(LS_KEY, JSON.stringify(hs));
-  }
-
-  let hotspots = loadHotspots();
-  let hotspotEls = new Map();
-  let editMode = false;
-
-  // =========================
+  const audio = new Audio();
+  audio.preload = "none";
+// =========================
   // Playlist
   // =========================
   let tracks = []; // {name, url}
@@ -479,10 +351,7 @@
   let shuffled = [];
   let shufflePos = 0;
 
-  function setNow(text){
-  nowEl.textContent = text;
-}
-
+  function setNow(text){ if(nowEl) if(nowEl) nowEl.textContent = text; }
 
 function setSignTitle(text){
   if (!signTextEl || !signInnerEl) return;
@@ -765,7 +634,7 @@ function setSignTitle(text){
 
   function setEditMode(on){
     editMode = !!on;
-    btnEdit.textContent = `Hotspot Edit: ${editMode ? "On" : "Off"}`;
+
     // Make hotspots look more editable
     hotspots.forEach(h => {
       const el = hotspotEls.get(h.id);
@@ -803,7 +672,7 @@ function setSignTitle(text){
       case "next":   return nextTrack();
       case "shuffle":
         shuffleOn = !shuffleOn;
-        btnShuffle.textContent = `Shuffle: ${shuffleOn ? "On" : "Off"}`;
+
         if (shuffleOn){
           buildShuffle();
         }
@@ -817,21 +686,10 @@ function setSignTitle(text){
   // =========================
   // Panel controls
   // =========================
-  btnSetup.addEventListener("click", () => panel.classList.toggle("open"));
-  btnClose.addEventListener("click", () => panel.classList.remove("open"));
-
-  btnEdit.addEventListener("click", () => {
-    setEditMode(!editMode);
   });
-
-  btnReset.addEventListener("click", () => resetHotspots());
-
   btnRescan.addEventListener("click", async () => {
     await boot(true);
   });
-
-  btnShuffle.addEventListener("click", () => handleAction("shuffle"));
-
   // =========================
   // Audio events
   // =========================
