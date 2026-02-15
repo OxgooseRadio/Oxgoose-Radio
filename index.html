@@ -1,861 +1,407 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Oxgoose Radio</title>
-  <style>
-    :root{
-      --bg:#05020a;
-      --panel:rgba(20,12,28,.72);
-      --panel2:rgba(20,12,28,.55);
-      --stroke:rgba(255,255,255,.10);
-      --text:rgba(255,255,255,.92);
-      --muted:rgba(255,255,255,.70);
-      --pink:#ff4bd6;
-      --blue:#6c7bff;
-      --green:#46ff95;
-      --shadow: 0 30px 120px rgba(0,0,0,.65);
-      --radius:24px;
-    }
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Oxgoose Radio</title>
+<style>
+  :root{
+    --bg:#05040a;
+    --stroke: rgba(255,255,255,.10);
+    --shadow: 0 24px 90px rgba(0,0,0,.65);
+    --radius: 18px;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    background:
+      radial-gradient(1200px 700px at 50% 35%, rgba(255,75,214,.12), transparent 60%),
+      radial-gradient(1000px 700px at 55% 45%, rgba(108,123,255,.14), transparent 62%),
+      radial-gradient(1200px 900px at 50% 50%, rgba(70,255,149,.08), transparent 60%),
+      var(--bg);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:22px;
+    color:#e9e9f2;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  }
 
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;
-      background: radial-gradient(1200px 700px at 50% 35%, rgba(255,75,214,.12), transparent 60%),
-                  radial-gradient(1000px 700px at 55% 45%, rgba(108,123,255,.14), transparent 62%),
-                  radial-gradient(1200px 900px at 50% 50%, rgba(70,255,149,.08), transparent 60%),
-                  var(--bg);
-      color:var(--text);
-      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:22px;
-    }
+  /* Stage (Scarlett image + overlays live here) */
+  #stage{
+    position:relative;
+    width:min(92vw, 920px);
+    aspect-ratio: 3 / 4;
+    border-radius: var(--radius);
+    overflow:hidden;
+    box-shadow: var(--shadow);
+    border:1px solid var(--stroke);
+    background:#0b0712;
+    user-select:none;
+    -webkit-user-select:none;
+    touch-action:manipulation;
+  }
 
-    /* Stage (Scarlett image + overlays live here) */
-    #stage{
-      position:relative;
-      width:min(92vw, 920px);
-      aspect-ratio: 3 / 4;
-      border-radius: var(--radius);
-      overflow:hidden;
-      box-shadow: var(--shadow);
-      border:1px solid var(--stroke);
-      background:#0b0712;
-      user-select:none;
-      -webkit-user-select:none;
-      touch-action:manipulation;
-    }
+  /* Background image */
+  #bg{
+    position:absolute; inset:0;
+    width:100%; height:100%;
+    object-fit:cover;
+    filter:saturate(1.05) contrast(1.03);
+    transform: translateZ(0);
+  }
 
-    /* Background image */
-    #bg{
-      position:absolute; inset:0;
-      width:100%; height:100%;
-      object-fit:cover;
-      filter:saturate(1.05) contrast(1.03);
-      transform: translateZ(0);
-    }
+  /* Soft vignette */
+  #vignette{
+    position:absolute; inset:0;
+    background:
+      radial-gradient(120% 90% at 50% 30%, rgba(0,0,0,0), rgba(0,0,0,.35) 62%, rgba(0,0,0,.72) 100%),
+      linear-gradient(to bottom, rgba(0,0,0,.06), rgba(0,0,0,.55));
+    pointer-events:none;
+  }
 
-    /* Soft vignette */
-    #vignette{
-      position:absolute; inset:0;
-      background:
-        radial-gradient(120% 90% at 50% 30%, rgba(0,0,0,.00), rgba(0,0,0,.35) 62%, rgba(0,0,0,.70) 100%),
-        linear-gradient(to bottom, rgba(0,0,0,.05), rgba(0,0,0,.55));
-      pointer-events:none;
-    }
+  /* Clickable hotspots layer */
+  #overlay{
+    position:absolute; inset:0;
+    pointer-events:auto;
+  }
+  .hotspot{
+    position:absolute;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.10);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 10px 30px rgba(0,0,0,.35);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:800;
+    letter-spacing: .08em;
+    font-size: 12px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,.65);
+    cursor:pointer;
+    transition: transform .08s ease, background .2s ease, border-color .2s ease, opacity .2s ease;
+  }
+  .hotspot:active{ transform: scale(.98); }
+  .hotspot:hover{
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.18);
+    color: rgba(255,255,255,.82);
+  }
+  /* If you want the hotspots invisible to viewers, uncomment:
+  .hotspot{ opacity:0; }
+  .hotspot:hover{ opacity:.08; }
+  */
 
-    /* Overlay controls region */
-    #overlay{
-      position:absolute; inset:0;
-      pointer-events:none;
-    }
-
-    /* Status bar bottom */
-    #statusBar{
-      position:absolute;
-      left:14px; right:14px; bottom:12px;
-      padding:10px 12px;
-      border-radius: 14px;
-      background: rgba(0,0,0,.35);
-      border:1px solid rgba(255,255,255,.10);
-      display:flex;
-      gap:10px;
-      align-items:center;
-      justify-content:space-between;
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      pointer-events:auto;
-    }
-
-    #statusLeft{
-      min-width:0;
-      display:flex;
-      gap:10px;
-      align-items:center;
-    }
-
-    #pill{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding:7px 10px;
-      border-radius: 999px;
-      background: rgba(255,255,255,.08);
-      border:1px solid rgba(255,255,255,.10);
-      font-weight:700;
-      letter-spacing:.08em;
-      text-transform:uppercase;
-      font-size:12px;
-    }
-
-    #dot{
-      width:10px;height:10px;border-radius:50%;
-      background: var(--pink);
-      box-shadow: 0 0 14px rgba(255,75,214,.65);
-    }
-
-    #now{
-      min-width:0;
-      font-size:13px;
-      color:var(--muted);
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-
-    #time{
-      font-variant-numeric: tabular-nums;
-      font-size:12px;
-      color:rgba(255,255,255,.75);
-      white-space:nowrap;
-    }
-
-    /* Hotspots */
-    .hotspot{
-      position:absolute;
-      border-radius:14px;
-      pointer-events:auto;
-      cursor:pointer;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(0,0,0,.10);
-      box-shadow: 0 0 0 rgba(0,0,0,0);
-      transition: transform .08s ease, box-shadow .18s ease, background .18s ease;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      gap:8px;
-      padding:8px 10px;
-      color:rgba(255,255,255,.92);
-      font-weight:800;
-      letter-spacing:.06em;
-      text-transform:uppercase;
-      font-size:12px;
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
-    }
-
-    .hotspot:active{ transform: scale(.98); }
-    .hotspot:hover{
-      background: rgba(255,255,255,.08);
-      box-shadow: 0 12px 40px rgba(0,0,0,.35);
-    }
-
-    .hs-play{ outline: 1px solid rgba(255,75,214,.25); }
-    .hs-pause{ outline: 1px solid rgba(108,123,255,.25); }
-    .hs-next{ outline: 1px solid rgba(70,255,149,.20); }
-    .hs-shuffle{ outline: 1px solid rgba(255,255,255,.18); }
-
-    /* Pulsing */
-    .pulse{
-      animation: pulse 1.15s ease-in-out infinite;
-    }
-    @keyframes pulse{
-      0%{ box-shadow: 0 0 0 rgba(255,75,214,.0); }
-      50%{ box-shadow: 0 0 26px rgba(255,75,214,.22); }
-      100%{ box-shadow: 0 0 0 rgba(255,75,214,.0); }
-    }
-
-    /* Visualizer (simple bars) */
-    #viz{
-      position:absolute;
-      left: 14%;
-      right: 14%;
-      top: 46%;
-      height: 10%;
-      pointer-events:none;
-      display:flex;
-      align-items:flex-end;
-      gap:4px;
-      opacity:.0;
-      transition: opacity .25s ease;
-    }
-    .bar{
-      width:100%;
-      border-radius: 10px;
-      background: linear-gradient(to top, rgba(255,75,214,.90), rgba(108,123,255,.85));
-      height: 12%;
-      filter: drop-shadow(0 0 8px rgba(255,75,214,.15));
-    }
-    #viz.on{ opacity:.85; }
-
-    /* Small control buttons in status bar */
-    .btn{
-      pointer-events:auto;
-      border:1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.07);
-      color: rgba(255,255,255,.92);
-      padding:8px 10px;
-      border-radius: 12px;
-      font-weight:700;
-      font-size:12px;
-      cursor:pointer;
-      transition: transform .08s ease, background .18s ease;
-      user-select:none;
-    }
-    .btn:hover{ background: rgba(255,255,255,.10); }
-    .btn:active{ transform: scale(.98); }
-
-    #rightButtons{
-      display:flex;
-      gap:8px;
-      align-items:center;
-    }
-
-    /* Config panel */
-    #panel{
-      position:absolute;
-      top:14px; right:14px;
-      width:min(86%, 360px);
-      background: var(--panel);
-      border:1px solid var(--stroke);
-      border-radius: 18px;
-      padding:12px;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      box-shadow: 0 20px 60px rgba(0,0,0,.55);
-      pointer-events:auto;
-      display:none;
-    }
-    #panel.open{ display:block; }
-
-    #panel h3{
-      margin:0 0 8px 0;
-      font-size:14px;
-      letter-spacing:.08em;
-      text-transform:uppercase;
-      color:rgba(255,255,255,.90);
-    }
-    #panel p{
-      margin:0 0 10px 0;
-      color:rgba(255,255,255,.72);
-      font-size:13px;
-      line-height:1.35;
-    }
-    #panel .row{
-      display:flex;
-      gap:8px;
-      margin:10px 0 0 0;
-      flex-wrap:wrap;
-    }
-    #panel .row .btn{ flex: 1 1 auto; }
-
-    /* Help toast */
-    #hint{
-      position:absolute;
-      left:14px; top:14px;
-      background: var(--panel2);
-      border:1px solid rgba(255,255,255,.10);
-      border-radius: 14px;
-      padding:10px 12px;
-      font-size:12px;
-      color:rgba(255,255,255,.80);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      pointer-events:none;
-      max-width: 62%;
-    }
-    #hint b{ color:rgba(255,255,255,.92); }
-
-    /* Mobile safety */
-    @media (max-width: 560px){
-      #hint{ max-width: 82%; font-size:11px; }
-      #statusBar{ flex-direction:column; align-items:flex-start; gap:8px; }
-      #rightButtons{ width:100%; justify-content:flex-end; }
-    }
+  /* The sign text that replaces the baked-in "OXGOOSE RADIO" */
   #signText{
-  position:absolute;
-  left:50%;
-  top:72%;
-  transform:translate(-50%,-50%);
-  width:62%;
-  padding:10px 14px;
+    position:absolute;
+    left:50%;
+    bottom: 18.8%;
+    transform: translateX(-50%);
+    width: 70%;
+    height: 6.9%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    pointer-events:none;
+    user-select:none;
+    -webkit-user-select:none;
+  }
+  /* dark glass behind the letters for legibility */
+  #signText::before{
+    content:"";
+    position:absolute;
+    inset: 8% 2%;
+    border-radius: 14px;
+    background: linear-gradient(to bottom, rgba(0,0,0,.55), rgba(0,0,0,.35));
+    box-shadow: inset 0 0 0 1px rgba(120,255,120,.08);
+    filter: blur(.0px);
+  }
 
-  text-align:center;
-  line-height:1.05;
-  letter-spacing:1px;
+  /* viewport that clips long titles */
+  .signClip{
+    position:relative;
+    width: 94%;
+    overflow:hidden;
+    white-space:nowrap;
+    text-align:center;
+  }
 
-  font-family: Impact, Arial Black, sans-serif;
-  font-size:clamp(18px, 2.2vw, 34px);
-  color:#58ff3b;
+  /* neon-ish text */
+  .signInner{
+    display:inline-block;
+    font-family: Impact, "Arial Black", system-ui, sans-serif;
+    font-size: clamp(18px, 2.5vw, 40px);
+    letter-spacing: 2px;
+    color: #39ff14;
+    text-shadow:
+      0 0 6px rgba(57,255,20,.75),
+      0 0 14px rgba(57,255,20,.55),
+      0 0 26px rgba(26,255,0,.35);
+    padding: 0 10px;
+    will-change: transform;
+  }
 
-  background: rgba(0,0,0,.35);
-  border: 1px solid rgba(120,255,120,.18);
-  border-radius: 10px;
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
+  /* marquee mode */
+  .marquee .signInner{
+    padding-left: 100%;
+    animation: marquee linear infinite;
+    animation-duration: var(--marquee-duration, 12s);
+  }
+  @keyframes marquee{
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(var(--marquee-distance, -120%)); }
+  }
 
-  -webkit-text-stroke: 1px rgba(0,0,0,.75);
-  text-shadow:
-    0 2px 0 rgba(0,0,0,.55),
-    0 0 6px rgba(60,255,60,.55),
-    0 0 16px rgba(60,255,60,.35);
-
-  pointer-events:none;
-  user-select:none;
-
-  /* KEY: hide overflow so it stays inside the sign */
-  overflow:hidden;
-  white-space:nowrap;
-}
-
-/* Inner text */
-#signInner{
-  display:inline-block;
-  white-space:nowrap;
-  will-change: transform;
-  padding-right: 40px; /* breathing room at the end */
-}
-
-/* Only scroll when JS adds .scroll */
-#signText.scroll #signInner{
-  animation: signMarquee var(--marqueeDur, 10s) linear infinite;
-}
-
-@keyframes signMarquee{
-  0%   { transform: translateX(0); }
-  100% { transform: translateX(calc(-1 * var(--marqueeShift, 0px))); }
-}
-
-
-
-  </style>
+  /* Hide the audio element */
+  audio{ display:none; }
+</style>
 </head>
 <body>
 
-  <div id="stage" aria-label="Oxgoose Radio Player">
-    <!-- Replace this filename with your Scarlett UI image if needed -->
-    <img id="bg" alt="Scarlett UI" src="scarlett-ui.png" />
+<div id="stage" aria-label="Oxgoose Radio Player">
+  <img id="bg" alt="Scarlett UI" src="scarlett-ui.jpg" />
+  <div id="overlay"></div>
 
-    <div id="overlay"></div>
-    <div id="signText"><span id="signInner"></span></div>
-    <div id="viz" aria-hidden="true"></div>
-    <div id="vignette"></div>
-
-    <div id="hint">
-      <b>Tip:</b> Click <b>⚙️ Setup</b> → <b>Hotspot Edit</b> to drag the PLAY/PAUSE/NEXT/SHUFFLE boxes onto the exact buttons in the art.
-      The positions save automatically in your browser.
+  <div id="signText" aria-hidden="true">
+    <div class="signClip" id="signClip">
+      <span class="signInner" id="signInner">Loading…</span>
     </div>
-
-    <div id="panel">
-      <h3>Setup</h3>
-      <p>
-        This page auto-builds the playlist by reading <b>.mp3</b> files from your GitHub repo.
-        Hotspots are draggable in edit mode, saved to this browser.
-      </p>
-      <div class="row">
-        <button class="btn" id="btnEdit">Hotspot Edit: Off</button>
-        <button class="btn" id="btnReset">Reset Hotspots</button>
-      </div>
-      <div class="row">
-        <button class="btn" id="btnRescan">Rescan MP3s</button>
-        <button class="btn" id="btnClose">Close</button>
-      </div>
-      <p style="margin-top:10px; opacity:.75">
-        If you changed filenames a lot, hit <b>Rescan MP3s</b>. If it ever “sticks” on Loading, hard refresh (Ctrl+Shift+R).
-      </p>
-    </div>
-
-    <div id="statusBar">
-      <div id="statusLeft">
-        <div id="pill"><span id="dot"></span> OXGOOSE RADIO</div>
-        <div id="now">Loading track list…</div>
-      </div>
-      <div id="rightButtons">
-        <div id="time">0:00 / 0:00</div>
-        <button class="btn" id="btnShuffle">Shuffle: On</button>
-        <button class="btn" id="btnSetup">⚙️ Setup</button>
-      </div>
-    </div>
-
-    <audio id="audio" preload="metadata" crossorigin="anonymous"></audio>
   </div>
+
+  <div id="vignette"></div>
+</div>
+
+<audio id="audio" preload="none"></audio>
 
 <script>
 (() => {
   // =========================
-  // CONFIG: set your repo here
+  // CONFIG
   // =========================
-  const OWNER = "OxgooseRadio";
-  const REPO  = "Oxgoose-Radio";
+  const OWNER  = "OxgooseRadio";
+  const REPO   = "Oxgoose-Radio";
   const BRANCH = "main";
-
-  // If your MP3s are in a folder, set it like "mp3" or "audio"
-  // Leave "" if they are in the repo root (what your screenshots show).
-  const MP3_PATH = "";
-
-  // Scarlett UI image filename in the repo (optional). Put your image in the repo and set name here.
-  // If you keep "scarlett-ui.png" then upload that file (recommended).
-  const UI_IMAGE = "scarlett-ui.jpg";
+  const MP3_PATH = ""; // e.g. "mp3" if your files are inside /mp3
 
   // =========================
   // DOM
   // =========================
-  const stage  = document.getElementById("stage");
-  const overlay= document.getElementById("overlay");
-  const bg     = document.getElementById("bg");
-  const audio  = document.getElementById("audio");
-  const nowEl  = document.getElementById("now");
-  const timeEl = document.getElementById("time");
-  const vizEl  = document.getElementById("viz");
-
-  const panel  = document.getElementById("panel");
-  const btnSetup = document.getElementById("btnSetup");
-  const btnClose = document.getElementById("btnClose");
-  const btnEdit  = document.getElementById("btnEdit");
-  const btnReset = document.getElementById("btnReset");
-  const btnRescan= document.getElementById("btnRescan");
-  const btnShuffle = document.getElementById("btnShuffle");
+  const stage   = document.getElementById("stage");
+  const overlay = document.getElementById("overlay");
+  const audio   = document.getElementById("audio");
+  const signClip  = document.getElementById("signClip");
+  const signInner = document.getElementById("signInner");
 
   // =========================
   // Hotspots (percent of stage)
   // =========================
   const LS_KEY = "oxgoose_hotspots_v3";
   const DEFAULT_HOTSPOTS = [
-    // These are "reasonable defaults" but you will likely adjust them using Hotspot Edit.
-    // x,y,w,h are % of stage width/height
-    { id:"play",    label:"PLAY",    x:24.5, y:44.8, w:11.5, h:4.9, cls:"hs-play" },
-    { id:"pause",   label:"PAUSE",   x:37.7, y:44.8, w:11.8, h:4.9, cls:"hs-pause" },
-    { id:"next",    label:"NEXT",    x:50.9, y:44.8, w:11.5, h:4.9, cls:"hs-next" },
-    { id:"shuffle", label:"SHUFFLE", x:64.1, y:44.8, w:12.2, h:4.9, cls:"hs-shuffle" },
+    { id:"play",    label:"PLAY",    x:24.5, y:44.8, w:11.5, h:4.9 },
+    { id:"pause",   label:"PAUSE",   x:37.7, y:44.8, w:11.8, h:4.9 },
+    { id:"next",    label:"NEXT",    x:50.9, y:44.8, w:11.5, h:4.9 },
+    { id:"shuffle", label:"SHUFFLE", x:64.1, y:44.8, w:12.2, h:4.9 },
   ];
 
-  function loadHotspots() {
+  function loadHotspots(){
     try{
       const raw = localStorage.getItem(LS_KEY);
-      if (!raw) return structuredClone(DEFAULT_HOTSPOTS);
+      if (!raw) return DEFAULT_HOTSPOTS.map(h => ({...h}));
       const parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed) || !parsed.length) return structuredClone(DEFAULT_HOTSPOTS);
-      // normalize missing fields
+      if (!Array.isArray(parsed) || !parsed.length) return DEFAULT_HOTSPOTS.map(h => ({...h}));
       return parsed.map(h => ({
-        id: h.id, label: h.label ?? h.id?.toUpperCase(),
-        x:+h.x, y:+h.y, w:+h.w, h:+h.h,
-        cls: h.cls || ("hs-" + h.id)
+        id: h.id,
+        label: h.label ?? (h.id || "").toUpperCase(),
+        x: +h.x, y:+h.y, w:+h.w, h:+h.h
       })).filter(h => h.id && isFinite(h.x) && isFinite(h.y) && isFinite(h.w) && isFinite(h.h));
-    }catch(e){
-      return structuredClone(DEFAULT_HOTSPOTS);
+    }catch{
+      return DEFAULT_HOTSPOTS.map(h => ({...h}));
     }
   }
 
-  function saveHotspots(hs){
-    localStorage.setItem(LS_KEY, JSON.stringify(hs));
+  function pctToPxRect(h){
+    const r = stage.getBoundingClientRect();
+    return {
+      left: (h.x/100)*r.width,
+      top:  (h.y/100)*r.height,
+      width:(h.w/100)*r.width,
+      height:(h.h/100)*r.height
+    };
   }
 
-  let hotspots = loadHotspots();
-  let hotspotEls = new Map();
-  let editMode = false;
+  let hotspotNodes = new Map();
+  function buildHotspots(){
+    overlay.innerHTML = "";
+    hotspotNodes.clear();
+    const hs = loadHotspots();
+    for (const h of hs){
+      const el = document.createElement("div");
+      el.className = "hotspot";
+      el.dataset.id = h.id;
+      el.textContent = h.label || h.id.toUpperCase();
+      overlay.appendChild(el);
+      hotspotNodes.set(h.id, {data:h, el});
+    }
+    positionHotspots();
+  }
+
+  function positionHotspots(){
+    for (const {data, el} of hotspotNodes.values()){
+      const r = pctToPxRect(data);
+      el.style.left = r.left + "px";
+      el.style.top = r.top + "px";
+      el.style.width = r.width + "px";
+      el.style.height = r.height + "px";
+    }
+  }
+
+  window.addEventListener("resize", () => positionHotspots());
 
   // =========================
-  // Playlist
+  // Playlist + player
   // =========================
-  let tracks = []; // {name, url}
-  let idx = 0;
+  let tracks = [];      // {name, url}
+  let currentIndex = 0;
   let shuffleOn = true;
   let shuffled = [];
   let shufflePos = 0;
 
-  function setNow(text){
-  nowEl.textContent = text;
-
-  const sign = document.getElementById("signText");
-  if (sign) sign.textContent = text;
-}
-
-  function fmtTime(sec){
-    if (!isFinite(sec) || sec < 0) sec = 0;
-    sec = Math.floor(sec);
-    const m = Math.floor(sec/60);
-    const s = sec % 60;
-    return `${m}:${String(s).padStart(2,"0")}`;
+  function cleanName(name){
+    return String(name || "").replace(/\.mp3$/i,"");
   }
 
-  function setTime(){
-    const cur = audio.currentTime || 0;
-    const dur = audio.duration || 0;
-    timeEl.textContent = `${fmtTime(cur)} / ${fmtTime(dur)}`;
+  function setSignTitle(text){
+    // Update text
+    signInner.textContent = text || "";
+    // Decide marquee
+    signClip.classList.remove("marquee");
+    // Wait a frame so measurements are accurate
+    requestAnimationFrame(() => {
+      const clipW = signClip.clientWidth;
+      const textW = signInner.scrollWidth;
+      if (textW > clipW + 8){
+        // distance: move left by (textW + clipW)
+        const distancePx = textW + clipW;
+        // duration proportional to distance (px / speed)
+        const speed = 90; // px/sec
+        const duration = Math.max(10, Math.min(40, distancePx / speed));
+        signClip.style.setProperty("--marquee-distance", (-distancePx) + "px");
+        signClip.style.setProperty("--marquee-duration", duration + "s");
+        signClip.classList.add("marquee");
+      }
+    });
   }
 
-  // =========================
-  // GitHub API fetch
-  // =========================
-  async function fetchTracks(){
-    // Uses GitHub Contents API (no auth) – rate limit exists but fine for personal use.
-    // We use download_url so MP3 plays reliably.
-    const pathPart = MP3_PATH ? `/${encodeURIComponent(MP3_PATH)}` : "";
-    const api = `https://api.github.com/repos/${OWNER}/${REPO}/contents${pathPart}?ref=${encodeURIComponent(BRANCH)}`;
-    const r = await fetch(api, { headers: { "Accept": "application/vnd.github+json" } });
-    if (!r.ok) throw new Error(`GitHub API ${r.status}`);
-    const data = await r.json();
-
-    const mp3s = (Array.isArray(data) ? data : [])
-      .filter(x => x && x.type === "file" && /\.mp3$/i.test(x.name))
-      .map(x => ({ name: x.name, url: x.download_url }))
-      .sort((a,b) => a.name.localeCompare(b.name, undefined, { numeric:true, sensitivity:"base" }));
-
-    return mp3s;
+  function setTrackIndex(i){
+    if (!tracks.length) return;
+    currentIndex = (i + tracks.length) % tracks.length;
+    const t = tracks[currentIndex];
+    audio.src = t.url;
+    setSignTitle(cleanName(t.name));
   }
 
   function buildShuffle(){
-    shuffled = tracks.map((_,i) => i);
-    // Fisher–Yates shuffle
-    for (let i = shuffled.length - 1; i > 0; i--){
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    shuffled = tracks.map((_,i)=>i);
+    for (let i=shuffled.length-1; i>0; i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [shuffled[i],shuffled[j]] = [shuffled[j],shuffled[i]];
     }
     shufflePos = 0;
-  }
-
-  function currentIndex(){
-    return shuffleOn ? (shuffled[shufflePos] ?? 0) : idx;
-  }
-
-  function setTrackByIndex(i){
-    if (!tracks.length) return;
-    if (shuffleOn){
-      // find i in shuffled and set shufflePos
-      const p = shuffled.indexOf(i);
-      shufflePos = p >= 0 ? p : 0;
-    } else {
-      idx = Math.max(0, Math.min(tracks.length - 1, i));
-    }
-    loadAndMaybePlay(false);
-  }
-
-  async function loadAndMaybePlay(autoplay){
-    if (!tracks.length){
-      setNow("No MP3s found in repo.");
-      return;
-    }
-
-    const i = currentIndex();
-    const t = tracks[i];
-
-    setNow(`Ready: ${tracks.length} tracks. Click PLAY.`);
-    // set src
-    audio.src = t.url;
-
-    // update now label to show selected even before play
-    setNow(`Selected: ${cleanName(t.name)}`);
-
-    try{
-      await audio.load();
-    }catch(_){}
-
-    if (autoplay){
-      await playAudio();
-    }
-  }
-
-  function cleanName(name){
-    return name.replace(/\.mp3$/i,"");
-  }
-
-  async function playAudio(){
-    if (!tracks.length) return;
-    // Browsers require a user gesture — you clicking PLAY is enough.
-    try{
-      await audio.play();
-      setNow(`Now Playing: ${cleanName(tracks[currentIndex()].name)}`);
-      setSignTitle(cleanName(tracks[currentIndex].name));
-      vizEl.classList.add("on");
-      setPulse(true);
-    }catch(e){
-      setNow("Blocked by browser autoplay. Click PLAY again.");
-      console.warn(e);
-    }
-  }
-
-  function pauseAudio(){
-    audio.pause();
-    setNow(`Paused: ${cleanName(tracks[currentIndex()].name)}`);
-    setSignTitle(cleanName(tracks[currentIndex].name));
-    vizEl.classList.remove("on");
-    setPulse(false);
   }
 
   function nextTrack(){
     if (!tracks.length) return;
     if (shuffleOn){
+      if (!shuffled.length) buildShuffle();
       shufflePos++;
       if (shufflePos >= shuffled.length){
         buildShuffle();
       }
-    } else {
-      idx++;
-      if (idx >= tracks.length) idx = 0;
+      setTrackIndex(shuffled[shufflePos]);
+    }else{
+      setTrackIndex(currentIndex + 1);
     }
-    audio.src = tracks[currentIndex()].url;
-    audio.currentTime = 0;
-    playAudio();
+    // keep playing if already playing
+    if (!audio.paused) audio.play().catch(()=>{});
   }
 
-  // =========================
-  // Visualizer (simple fake bars driven by time; no WebAudio needed)
-  // =========================
-  const BAR_COUNT = 18;
-  const bars = [];
-  function initViz(){
-    vizEl.innerHTML = "";
-    for (let i=0;i<BAR_COUNT;i++){
-      const b = document.createElement("div");
-      b.className = "bar";
-      b.style.height = "12%";
-      vizEl.appendChild(b);
-      bars.push(b);
+  function toggleShuffle(){
+    shuffleOn = !shuffleOn;
+    if (shuffleOn){
+      buildShuffle();
+      // keep current track as first in shuffled order
+      const pos = shuffled.indexOf(currentIndex);
+      if (pos > 0) [shuffled[0], shuffled[pos]] = [shuffled[pos], shuffled[0]];
+      shufflePos = 0;
     }
   }
-  function tickViz(){
-    if (!tracks.length) return requestAnimationFrame(tickViz);
-    const playing = !audio.paused && isFinite(audio.currentTime);
-    if (playing){
-      const t = audio.currentTime || 0;
-      for (let i=0;i<bars.length;i++){
-        const wave = Math.sin(t*2.2 + i*0.7) * 0.5 + 0.5;
-        const wave2= Math.sin(t*3.6 + i*0.35) * 0.5 + 0.5;
-        const v = 0.18 + 0.82 * (0.55*wave + 0.45*wave2);
-        bars[i].style.height = `${Math.round(v*100)}%`;
-        bars[i].style.opacity = `${0.55 + 0.45*v}`;
+
+  async function fetchTracks(){
+    const pathPart = MP3_PATH ? `/${encodeURIComponent(MP3_PATH)}` : "";
+    const api = `https://api.github.com/repos/${OWNER}/${REPO}/contents${pathPart}?ref=${encodeURIComponent(BRANCH)}`;
+    const r = await fetch(api, { headers: { "Accept": "application/vnd.github+json" } });
+    if (!r.ok) throw new Error(`GitHub API ${r.status}`);
+    const data = await r.json();
+    const mp3s = (Array.isArray(data) ? data : [])
+      .filter(x => x && x.type === "file" && /\.mp3$/i.test(x.name))
+      .map(x => ({ name: x.name, url: x.download_url }))
+      .sort((a,b) => a.name.localeCompare(b.name, undefined, { numeric:true, sensitivity:"base" }));
+    return mp3s;
+  }
+
+  async function init(){
+    buildHotspots();
+
+    // Hotspot actions
+    overlay.addEventListener("click", async (e) => {
+      const el = e.target.closest(".hotspot");
+      if (!el) return;
+      const id = el.dataset.id;
+      if (id === "play"){
+        if (!tracks.length) return;
+        try{ await audio.play(); }catch{}
+      }else if (id === "pause"){
+        audio.pause();
+      }else if (id === "next"){
+        nextTrack();
+      }else if (id === "shuffle"){
+        toggleShuffle();
       }
-    }
-    requestAnimationFrame(tickViz);
-  }
-
-  // =========================
-  // Hotspot rendering / edit mode
-  // =========================
-  function pctToPxRect(h){
-    const r = stage.getBoundingClientRect();
-    return {
-      left: (h.x/100) * r.width,
-      top:  (h.y/100) * r.height,
-      width:(h.w/100) * r.width,
-      height:(h.h/100)* r.height
-    };
-  }
-
-  function placeHotspot(el, h){
-    const r = pctToPxRect(h);
-    el.style.left = `${r.left}px`;
-    el.style.top = `${r.top}px`;
-    el.style.width = `${r.width}px`;
-    el.style.height = `${r.height}px`;
-  }
-
-  function renderHotspots(){
-    overlay.innerHTML = "";
-    hotspotEls.clear();
-
-    hotspots.forEach(h => {
-      const el = document.createElement("div");
-      el.className = `hotspot ${h.cls || ""}`;
-      el.dataset.id = h.id;
-      el.textContent = h.label || h.id.toUpperCase();
-      placeHotspot(el, h);
-
-      el.addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (editMode) return;
-        handleAction(h.id);
-      });
-
-      // drag only in edit mode
-      let dragging = false;
-      let start = null;
-
-      el.addEventListener("pointerdown", (e) => {
-        if (!editMode) return;
-        dragging = true;
-        el.setPointerCapture(e.pointerId);
-        const rect = stage.getBoundingClientRect();
-        start = {
-          pointerId: e.pointerId,
-          rect,
-          hx: h.x, hy: h.y
-        };
-        e.preventDefault();
-        e.stopPropagation();
-      });
-
-      el.addEventListener("pointermove", (e) => {
-        if (!editMode || !dragging || !start || e.pointerId !== start.pointerId) return;
-
-        const rect = start.rect;
-        const dx = (e.clientX - rect.left) / rect.width * 100;
-        const dy = (e.clientY - rect.top)  / rect.height * 100;
-
-        // center the hotspot around pointer
-        const newX = dx - h.w/2;
-        const newY = dy - h.h/2;
-
-        h.x = clamp(newX, 0, 100 - h.w);
-        h.y = clamp(newY, 0, 100 - h.h);
-        placeHotspot(el, h);
-      });
-
-      el.addEventListener("pointerup", (e) => {
-        if (!editMode || !dragging) return;
-        dragging = false;
-        start = null;
-        saveHotspots(hotspots);
-      });
-
-      overlay.appendChild(el);
-      hotspotEls.set(h.id, el);
     });
 
-    // keep overlay clickable
-    overlay.style.pointerEvents = "none";
-    // hotspots themselves are pointer-events:auto in CSS
-  }
+    // Auto-advance
+    audio.addEventListener("ended", () => nextTrack());
 
-  function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
-
-  function setEditMode(on){
-    editMode = !!on;
-    btnEdit.textContent = `Hotspot Edit: ${editMode ? "On" : "Off"}`;
-    // Make hotspots look more editable
-    hotspots.forEach(h => {
-      const el = hotspotEls.get(h.id);
-      if (!el) return;
-      el.style.cursor = editMode ? "grab" : "pointer";
-      el.style.outline = editMode ? "2px dashed rgba(255,255,255,.25)" : "";
-    });
-    setNow(editMode ? "Edit Mode: drag the hotspots into place. Saved automatically." : (tracks.length ? "Ready." : "Loading track list…"));
-  }
-
-  function resetHotspots(){
-    localStorage.removeItem(LS_KEY);
-    hotspots = loadHotspots();
-    renderHotspots();
-    setNow("Hotspots reset to defaults.");
-  }
-
-  // Pulse the hotspots visually while music is playing (you asked for pulsing)
-  function setPulse(on){
-    ["play","pause","next","shuffle"].forEach(id => {
-      const el = hotspotEls.get(id);
-      if (!el) return;
-      if (on) el.classList.add("pulse");
-      else el.classList.remove("pulse");
-    });
-  }
-
-  // =========================
-  // Actions
-  // =========================
-  function handleAction(id){
-    switch(id){
-      case "play":   return playAudio();
-      case "pause":  return pauseAudio();
-      case "next":   return nextTrack();
-      case "shuffle":
-        shuffleOn = !shuffleOn;
-        btnShuffle.textContent = `Shuffle: ${shuffleOn ? "On" : "Off"}`;
-        if (shuffleOn){
-          buildShuffle();
-        }
-        setNow(`Shuffle: ${shuffleOn ? "On" : "Off"}`);
-        return;
-      default:
-        return;
-    }
-  }
-
-  // =========================
-  // Panel controls
-  // =========================
-  btnSetup.addEventListener("click", () => panel.classList.toggle("open"));
-  btnClose.addEventListener("click", () => panel.classList.remove("open"));
-
-  btnEdit.addEventListener("click", () => {
-    setEditMode(!editMode);
-  });
-
-  btnReset.addEventListener("click", () => resetHotspots());
-
-  btnRescan.addEventListener("click", async () => {
-    await boot(true);
-  });
-
-  btnShuffle.addEventListener("click", () => handleAction("shuffle"));
-
-  // =========================
-  // Audio events
-  // =========================
-  audio.addEventListener("timeupdate", setTime);
-  audio.addEventListener("loadedmetadata", setTime);
-  audio.addEventListener("ended", () => nextTrack());
-  audio.addEventListener("play", () => { vizEl.classList.add("on"); setPulse(true); });
-  audio.addEventListener("pause", () => { vizEl.classList.remove("on"); setPulse(false); });
-
-  // =========================
-  // Resizing: re-place hotspots
-  // =========================
-  window.addEventListener("resize", () => {
-    hotspots.forEach(h => {
-      const el = hotspotEls.get(h.id);
-      if (el) placeHotspot(el, h);
-    });
-  });
-
-  // =========================
-  // Boot
-  // =========================
-  async function boot(rescan){
+    // Load playlist
     try{
-      if (UI_IMAGE) bg.src = UI_IMAGE;
-
-      setNow("Loading track list…");
       tracks = await fetchTracks();
-
       if (!tracks.length){
-        setNow("No MP3s found. Make sure your MP3s are in the repo root (or set MP3_PATH).");
-      } else {
-        if (shuffleOn) buildShuffle();
-        setNow(`Ready: ${tracks.length} tracks. Click PLAY.`);
-        // select first track but don't autoplay
-        audio.src = tracks[currentIndex()].url;
-        setNow(`Ready: ${tracks.length} tracks. Selected: ${cleanName(tracks[currentIndex()].name)}. Click PLAY.`);
+        setSignTitle("No MP3s found");
+        return;
       }
-    }catch(e){
-      console.error(e);
-      setNow("Failed to load tracks. Open DevTools Console for the error (GitHub API limit or path mismatch).");
+      // Pick first track and prep shuffle order
+      setTrackIndex(0);
+      buildShuffle();
+      // Keep current as first
+      const pos = shuffled.indexOf(0);
+      if (pos > 0) [shuffled[0], shuffled[pos]] = [shuffled[pos], shuffled[0]];
+      shufflePos = 0;
+
+      // Optional: auto-start is usually blocked; user taps PLAY hotspot.
+      setSignTitle(cleanName(tracks[0].name));
+    }catch(err){
+      console.error(err);
+      setSignTitle("Error loading MP3s");
     }
   }
 
-  // init
-  initViz();
-  renderHotspots();
-  setEditMode(false);
-  boot(false);
-  tickViz();
-
+  init();
 })();
 </script>
-
 </body>
 </html>
