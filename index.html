@@ -121,10 +121,10 @@
   #signText{
     position:absolute;
     left:50%;
-    top: 68.35%;
+    top: 68.0%;
     transform: translateX(-50%);
     width: 55.2%;
-    height: 10.9%;
+    height: 9.1%;
     display:flex;
     align-items:center;
     justify-content:center;
@@ -145,17 +145,20 @@
   .signClip{
     position:relative;
     width: 96%;
+    height: 82%;
     overflow:hidden;
     white-space:nowrap;
     text-align:center;
+    display:flex;
+    align-items:center;
   }
 
   .signInner{
     display:inline-block;
     font-family: Impact, "Arial Black", system-ui, sans-serif;
-    font-size: clamp(11px, 1.15vw, 18px);
+    font-size: clamp(13px, 1.35vw, 22px);
     line-height:1;
-    letter-spacing: .35px;
+    letter-spacing: .3px;
     color: var(--green);
     text-transform: uppercase;
     text-shadow:
@@ -167,9 +170,19 @@
   }
 
   .marquee .signInner{
-    padding-left: 100%;
-    animation: marquee linear infinite;
-    animation-duration: var(--marquee-duration, 12s);
+    display:inline-block;
+    font-family: Impact, "Arial Black", system-ui, sans-serif;
+    font-size: clamp(13px, 1.35vw, 22px);
+    line-height:1;
+    letter-spacing: .3px;
+    color: var(--green);
+    text-transform: uppercase;
+    text-shadow:
+      0 0 4px rgba(57,255,20,.72),
+      0 0 10px rgba(57,255,20,.42),
+      0 0 18px rgba(26,255,0,.22);
+    padding: 0 6px;
+    will-change: transform;
   }
   @keyframes marquee{
     0%   { transform: translateX(0); }
