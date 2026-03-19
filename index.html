@@ -167,19 +167,9 @@
   }
 
   .marquee .signInner{
-    display:inline-block;
-    font-family: Impact, "Arial Black", system-ui, sans-serif;
-    font-size: clamp(11px, 1.15vw, 18px);
-    line-height:1;
-    letter-spacing: .35px;
-    color: var(--green);
-    text-transform: uppercase;
-    text-shadow:
-      0 0 4px rgba(57,255,20,.72),
-      0 0 10px rgba(57,255,20,.42),
-      0 0 18px rgba(26,255,0,.22);
-    padding: 0 6px;
-    will-change: transform;
+    padding-left: 100%;
+    animation: marquee linear infinite;
+    animation-duration: var(--marquee-duration, 12s);
   }
   @keyframes marquee{
     0%   { transform: translateX(0); }
